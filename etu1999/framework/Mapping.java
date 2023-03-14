@@ -6,6 +6,11 @@ public class Mapping {
     String className;
     String Method;
 
+    public Mapping(String classname, String method){
+        setClassName(classname);
+        setMethod(method);
+    }
+
     public String getClassName() {
         return className;
     }
