@@ -1,6 +1,8 @@
 package etu1999.framework.servlet;
 
 import etu1999.framework.Mapping;
+import etu1999.framework.utils.ClassRetriever;
+import etu1999.framework.utils.mapping.Url;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -10,10 +12,29 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Set;
 
 public class FrontServlet extends HttpServlet {
     HashMap<String, Mapping> MappingUrls;
+
+    @Override
+    public void init() throws ServletException {
+        retrieveMappingUrls();
+    }
+
+    protected void retrieveMappingUrls(){
+        Set<Class> classes = ClassRetriever.findAllClasses("controller");
+        for (Class classe : classes){
+            Method[] methods = classe.getMethods();
+            for (Method method : methods)
+                if(method.isAnnotationPresent(Url.class)) {
+                    Url url = method.getAnnotation(Url.class);
+                    this.MappingUrls.put(url.value(), new Mapping(classe.getName(), method.getName()));
+                }
+        }
+    }
 
     protected void processRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("text/html");
