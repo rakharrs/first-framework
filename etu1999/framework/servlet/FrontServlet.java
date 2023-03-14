@@ -23,7 +23,6 @@ public class FrontServlet extends HttpServlet {
     public void init() throws ServletException {
         retrieveMappingUrls();
     }
-
     protected void retrieveMappingUrls(){
         Set<Class> classes = ClassRetriever.findAllClasses("etu1999.framework.controller");
         for (Class classe : classes){
