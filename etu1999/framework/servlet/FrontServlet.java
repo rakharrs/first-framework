@@ -25,7 +25,7 @@ public class FrontServlet extends HttpServlet {
     }
 
     protected void retrieveMappingUrls(){
-        Set<Class> classes = ClassRetriever.findAllClasses("controller");
+        Set<Class> classes = ClassRetriever.findAllClasses("etu1999.framework.controller");
         for (Class classe : classes){
             Method[] methods = classe.getMethods();
             for (Method method : methods)
