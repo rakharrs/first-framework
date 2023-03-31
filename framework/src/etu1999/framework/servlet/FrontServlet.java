@@ -3,12 +3,13 @@ package etu1999.framework.servlet;
 import etu1999.framework.Mapping;
 import etu1999.framework.utils.ClassRetriever;
 import etu1999.framework.utils.mapping.Url;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import etu1999.framework.process.Modelview;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,7 +26,7 @@ public class FrontServlet extends HttpServlet {
     public void init() throws ServletException {
         String package_src = getInitParameter("package_src");
         retrieveMappingUrls(Objects.requireNonNullElse(package_src,
-                "etu1999.framework.controller"));
+                "controller"));
     }
     protected void retrieveMappingUrls(String package_name){
         try{
@@ -49,22 +50,34 @@ public class FrontServlet extends HttpServlet {
     }
 
     protected void processRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("text/html");
-
         HttpServletMapping mapping = req.getHttpServletMapping();
+        String key = mapping.getMatchValue();
+        Mapping map = getMappingUrls().get(key);
+        try {
+            Class<?> process_class = Class.forName(map.getClassName());
+            Object objet = process_class.newInstance();
+            Method method = objet.getClass().getDeclaredMethod(map.getMethod());
+            Modelview modelview = (Modelview) method.invoke(objet);
+
+            RequestDispatcher dispatcher = req.getRequestDispatcher(modelview.getView());
+            dispatcher.forward(req, resp);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        resp.setContentType("text/html");
         // Hello
         PrintWriter out = resp.getWriter();
         out.println("<html><body>");
-
 
         out.println("<h1> URI : " + req.getRequestURI() + "</h1>");
         out.println("<h1>" + req.getQueryString() + "</h1>");
         out.println("<h1> URL : " + req.getRequestURL() + "</h1>");
         out.println("<h1>" + mapping.getPattern() + "</h1>");
         out.println("<h1>" + mapping.getMatchValue() + "</h1>");
-        for (String key: getMappingUrls().keySet()) {
-            out.print("key : " + key);
-            out.println(" value : " + getMappingUrls().get(key));
+        for (String k: getMappingUrls().keySet()) {
+            out.print("key : " + k);
+            out.println(" value : " + getMappingUrls().get(k).getClassName());
         }
         System.gc();
         out.println("</body></html>");
