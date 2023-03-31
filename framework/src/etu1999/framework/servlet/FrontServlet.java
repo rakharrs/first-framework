@@ -51,14 +51,16 @@ public class FrontServlet extends HttpServlet {
 
     protected void processRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HttpServletMapping mapping = req.getHttpServletMapping();
-        String key = mapping.getMatchValue();
+        //String key = mapping.getMatchValue();
+        String key = getMappingValue(req);
         Mapping map = getMappingUrls().get(key);
         try {
             Class<?> process_class = Class.forName(map.getClassName());
             Object objet = process_class.newInstance();
             Method method = objet.getClass().getDeclaredMethod(map.getMethod());
-            Modelview modelview = (Modelview) method.invoke(objet);
-
+            if(method.getReturnType()==ModelView.class){
+                Modelview modelview = (Modelview) method.invoke(objet);
+            }
             RequestDispatcher dispatcher = req.getRequestDispatcher(modelview.getView());
             dispatcher.forward(req, resp);
 
@@ -75,12 +77,22 @@ public class FrontServlet extends HttpServlet {
         out.println("<h1> URL : " + req.getRequestURL() + "</h1>");
         out.println("<h1>" + mapping.getPattern() + "</h1>");
         out.println("<h1>" + mapping.getMatchValue() + "</h1>");
+        out.println("<p>"+req.getContextPath()+"</p>");
+        out.println("<p>"+getMappingValue(req)+"</p>");
         for (String k: getMappingUrls().keySet()) {
             out.print("key : " + k);
             out.println(" value : " + getMappingUrls().get(k).getClassName());
         }
         System.gc();
         out.println("</body></html>");
+    }
+
+    public String getMappingValue(HttpServletRequest request){
+        String value = new String();
+        String URI = request.getRequestURI();
+        String context_path = request.getContextPath();
+        value = URI.substring(context_path.length());
+        return value;
     }
 
     @Override

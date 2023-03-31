@@ -8,6 +8,8 @@ lib_path=$src/lib
 shopt -s globstar
 
 javac -d $build -cp $lib_path/* $src/**/*.java
+rm -R ./test-framework/WEB-INF/classes/*
+javac -d ./test-framework/WEB-INF/classes -cp ./test-framework/WEB-INF/lib/*.jar ./test-framework/java/**/*.java
 
 cd $framework_path/build
 
