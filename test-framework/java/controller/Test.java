@@ -10,11 +10,9 @@ public class Test {
     @Url("/test")
     public Modelview test(){
         Modelview modelview = new Modelview();
-        HashMap<String, Object> new_attributes = new HashMap<>();
-        new_attributes.put("test1", 22);
-        new_attributes.put("test2", "ok");
-        
-        modelview.setAttributes(new_attributes);
+
+        modelview.addItem("test1", 22);
+        modelview.addItem("test2", "ok");
         modelview.setView("ox.jsp");
         System.out.println("oko");
         return modelview;

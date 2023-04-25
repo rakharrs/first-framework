@@ -5,10 +5,13 @@ import java.util.HashMap;
 public class Modelview {
     
     protected String view;
-    private HashMap<String, Object> attributes;
+    private HashMap<String, Object> attributes = new HashMap<>();
 
     public String getView() {
         return view;
+    }
+    public void addItem(String key, Object value){
+        this.getAttributes().put(key, value);
     }
 
     public HashMap<String, Object> getAttributes(){
