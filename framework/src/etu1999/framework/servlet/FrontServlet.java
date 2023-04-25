@@ -82,8 +82,8 @@ public class FrontServlet extends HttpServlet {
             if(method.getReturnType()==Modelview.class)
                 modelview = (Modelview) method.invoke(objet);
             if(modelview != null){
-                for (String k: modelview.getAttributes().keySet())
-                    req.setAttribute(k, modelview.getAttributes().get(k));
+                for (String k: modelview.getData().keySet())
+                    req.setAttribute(k, modelview.getData().get(k));
                 req.getRequestDispatcher(modelview.getView()).forward(req, resp);
             }
         } catch (Exception e) {
