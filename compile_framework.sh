@@ -13,4 +13,4 @@ javac -d ./test-framework/WEB-INF/classes -cp ./test-framework/WEB-INF/lib/*.jar
 
 cd $framework_path/build
 
-jar -cf $webapp_path/WEB-INF/lib/framework.jar etu1999 
+jar -cvf $webapp_path/WEB-INF/lib/framework.jar etu1999 

@@ -1,1 +1,1 @@
-sh compile_framework.sh && sh build_webapp.sh
+sh compile_framework.sh && sh build_webapp.sh $1
