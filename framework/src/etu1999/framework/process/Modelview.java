@@ -5,21 +5,21 @@ import java.util.HashMap;
 public class Modelview {
     
     protected String view;
-    private HashMap<String, Object> attributes = new HashMap<>();
+    private HashMap<String, Object> data = new HashMap<>();
 
     public String getView() {
         return view;
     }
     public void addItem(String key, Object value){
-        this.getAttributes().put(key, value);
+        this.getData().put(key, value);
     }
 
-    public HashMap<String, Object> getAttributes(){
+    public HashMap<String, Object> getData(){
         return this.attributes;
     }
 
-    public void setAttributes(HashMap<String, Object> new_attributes){
-        this.attributes = new_attributes;
+    public void setData(HashMap<String, Object> new_attributes){
+        this.data = new_attributes;
     }
 
     public void setView(String view) {
