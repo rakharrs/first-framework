@@ -8,6 +8,6 @@
 <h1><%= "Hello World!" %> <%=request.getAttribute("test1")%>
 </h1>
 <br/>
-<a href="">Hello Servlet</a>
+<a href="test?name=ok">Hello Servlet</a>
 </body>
 </html>
