@@ -15,7 +15,7 @@ public class Modelview {
     }
 
     public HashMap<String, Object> getData(){
-        return this.attributes;
+        return this.data;
     }
 
     public void setData(HashMap<String, Object> new_attributes){
