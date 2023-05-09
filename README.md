@@ -1,7 +1,7 @@
 # first-framework
 WEB Framework java
-
-## To try this test:
+## Setup
+## To try (compile and deploy) this test:
 Execute the command :
 ```Bash
 sh run.sh <project-name>
@@ -33,4 +33,26 @@ the classes have to be in the same package wich is define in *web.xml* as packag
         <url-pattern>/</url-pattern>
     </servlet-mapping>
 ```
+
+## Instructions
+- First the following classes havee to be imported
+    ```Java
+        import etu1999.framework.process.Modelview;
+        import etu1999.framework.utils.mapping.Url;
+    ```
+- functions must return Modelview
+- functions must be annoted with the annotation Url( *followed by the url_link* )
+    - Example 
+    ```Java
+        @Url("the url_link")
+        public Modelview example(){}
+    ```
+- Within the Modelview you can define the view *jsp file* to show
+and send data to this view
+    - Example
+    ```Java
+        Modelview modelview = new Modelview();
+        modelview.setView("index.jsp");
+        modelview.addItem("data", "Test");
+    ```
 
