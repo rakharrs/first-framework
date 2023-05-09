@@ -3,6 +3,7 @@ package etu1999.framework.servlet;
 import etu1999.framework.Mapping;
 import etu1999.framework.utils.ClassRetriever;
 import etu1999.framework.utils.mapping.Url;
+import etu1999.framework.utils.mapping.Arg;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -83,32 +84,91 @@ public class FrontServlet extends HttpServlet {
 
         // Maka an'ilay parameter avy @ requete
             Map<String, String[]> requestParameter = req.getParameterMap();
+
         // m'initialize anle parameter
             init_modelview_parameter(requestParameter, objet);
 
+            /* 
             Method method = objet.getClass().getDeclaredMethod(map.getMethod());
             if(method.getReturnType()==Modelview.class)
-                modelview = (Modelview) method.invoke(objet);
+                modelview = (Modelview) method.invoke(objet); 
+            */
+
+        // M'invoke an'ilay conntroller
+            modelview = invoke_requested_method(requestParameter, objet, map.getMethod());
+
             if(modelview != null){
                 for (String k: modelview.getData().keySet())
                     req.setAttribute(k, modelview.getData().get(k));
                 req.getRequestDispatcher(modelview.getView()).forward(req, resp);
+            }else{
+                PrintWriter out = resp.getWriter();
+                out.println("-MODELVIEW NULL-");
+                out.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    public Method getMathingMethod(Method[] methods, String method_name) throws NoSuchMethodException{
+        for(Method method : methods)
+            if (method.getName().equals(method_name))
+                return method;
+        throw new NoSuchMethodException("No method as : "+method_name);
+    }
+
+    public Modelview invoke_requested_method(Map<String, String[]> parameters, Object objet, String method_name) {
+        Modelview modelview = null;
+        try {
+            System.out.println("invokde meth " + method_name);
+            // Method method = objet.getClass().getDeclaredMethod(method_name);
+            Method method = getMathingMethod(objet.getClass().getDeclaredMethods(), method_name);
+            if(method.getReturnType()==Modelview.class){
+                Parameter[] params = method.getParameters();
+                if(params.length > 0){
+                    Class<?>[] method_parameter_class = arrayMethodParameter(method);
+                    //Object[] args = new Object[params.length];
+                    String[][] args = new String[params.length][];
+                    for(int i = 0; i < params.length; i++){
+                        String[] param = parameters.get(params[i].getName());
+                        args[i] = param;
+                    }
+                        
+                    
+                    modelview = (Modelview) method.invoke(objet, dynamicCast(method_parameter_class, args));
+                }else modelview = (Modelview) method.invoke(objet);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return modelview;
+    }
+
+    private Object [] dynamicCast(Class<?>[]classes,String[][]args) throws Exception{
+       Object[] array = new Object[classes.length];
+       int i = 0;
+       for (Class<?> cl:classes) {
+           //array[i] = cl.getDeclaredConstructor(String.class).newInstance(args[i]);
+            if(cl == String.class)
+                array[i] = cl.getDeclaredConstructor(String.class).newInstance(args[i][0]);
+            else array[i] = cl.getDeclaredConstructor(String[].class).newInstance(args[i]);
+           i++;
+       }
+       return array;
+   }
+
     /* Invoke setters */
     public void init_modelview_parameter(Map<String, String[]> parameters, Object objet) throws Exception{
         Method[] methods = objet.getClass().getDeclaredMethods();
         for(Method method : methods){
             String method_name = method.getName();
+            System.out.println("method name : "+method_name);
             if(!method_name.startsWith("set", 0))
                 continue;
             String field_name = method_name.substring(3).toLowerCase();
             String[] parameter = parameters.get(field_name);
-            if(parameters.get(field_name) != null){
+            if(parameter != null){
                 Class<?>[] method_parameter_class = arrayMethodParameter(method);
                 method.invoke(objet, dynamicCast(method_parameter_class, parameter));
             }
@@ -122,12 +182,11 @@ public class FrontServlet extends HttpServlet {
      * @return Object array
      */
 
-     private Object [] dynamicCast(Class<?>[]classes,Object[]args){
+     private Object [] dynamicCast(Class<?>[]classes,Object[]args) throws Exception{
         Object[] array = new Object[classes.length];
         int i = 0;
         for (Class<?> cl:classes) {
-            System.out.println(args.getClass());
-            array[i] = cl.cast(args[i]);
+            array[i] = cl.getDeclaredConstructor(String.class).newInstance(args[i]);
             i++;
         }
         return array;
@@ -141,7 +200,6 @@ public class FrontServlet extends HttpServlet {
         // Iterate through the parameters and get their classes
         for (int i = 0; i < parameters.length; i++) {
             paramClasses[i] = parameters[i].getType();
-            //System.out.println(parameters[i].getType());
         }
         // Return the array of parameter classes
         return paramClasses;

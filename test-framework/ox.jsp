@@ -5,9 +5,9 @@
     <title>JSP - Hello World</title>
 </head>
 <body>
-<h1><%= "Hello World!" %> <%=request.getAttribute("test1")%>
-</h1>
+<h1><%= "Hello World!" %> <%=request.getAttribute("test1")%></h1>
+<h2><%= request.getAttribute("test2") %></h2>
 <br/>
-<a href="test?name=ok">Hello Servlet</a>
+<a href="tests?name=ok&&ok=ok">Hello Servlet</a>
 </body>
 </html>
