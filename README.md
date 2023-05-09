@@ -6,7 +6,7 @@ Execute the command :
 ```Bash
 sh run.sh <project-name>
 ```
-But before the tomcat path have to be setted
+But before the tomcat path have to be settedflambusard
 By changing the tomcat variable in
 ```Bash
 ./script/build_webapp.sh
@@ -55,4 +55,22 @@ and send data to this view
         modelview.setView("index.jsp");
         modelview.addItem("data", "Test");
     ```
+ - You can also put argument in the function and defnie it by post or get method
+ - And do the same thing with classes property
+    - Example
+        ```Java
+            public class Test {
+                String name;
+                @Url("/tests")
+                public Modelview tests(String ok){
+                    Modelview modelview = new Modelview();
+                    if(getName() != null)
+                        modelview.addItem("test1", getName());
+                    else modelview.addItem("test1", "unknown");
+                    modelview.addItem("test2", ok);
+                    modelview.setView("ox.jsp");
+                    return modelview;
+                }
+            }
+        ```
 
