@@ -1,10 +1,10 @@
 package controller;
 
+import etu1999.framework.process.Modelview;
 import etu1999.framework.utils.mapping.Url;
+import etu1999.framework.utils.mapping.Arg;
 
 import java.util.HashMap;
-
-import etu1999.framework.process.Modelview;
 
 public class Test {
     String name;
@@ -12,7 +12,6 @@ public class Test {
     @Url("/test")
     public Modelview test(){
         Modelview modelview = new Modelview();
-
         
         if(getName() != null){
             modelview.addItem("test1", getName());
@@ -27,6 +26,17 @@ public class Test {
         return modelview;
     }
 
+    @Url("/tests")
+    public Modelview tests(String ok){
+        Modelview modelview = new Modelview();
+        if(getName() != null)
+            modelview.addItem("test1", getName());
+        else modelview.addItem("test1", "unknown");
+        modelview.addItem("test2", ok);
+        modelview.setView("ox.jsp");
+        return modelview;
+    }
+
     public void setName(String name){
         this.name = name;
     }
@@ -34,6 +44,5 @@ public class Test {
     public String getName(){
         return this.name;
     }
-
     
 }

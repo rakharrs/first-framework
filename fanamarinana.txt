@@ -1,0 +1,2 @@
+Remarque :
+    - Rehefa mandefa tableau amin'ny method get na post dia possible null no averiny
