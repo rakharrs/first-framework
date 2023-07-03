@@ -7,7 +7,7 @@
     <title>Document</title>
 </head>
 <body>
-    <form action="/jean/submit" method="post">
+    <form action="/jean/submit" method="post" enctype="multipart/form-data">
         <input type="text" placeholder="name" name="name">
         <div>
             Liked color :
@@ -31,7 +31,7 @@
                 <label for="digit_<%=i%>"><%=i%></label>
             <% } %>
         </div>
-
+        <input type="file[]" name="picture" multiple>
         <input type="submit" value="submit">
     </form>
 </body>

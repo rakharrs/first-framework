@@ -1,4 +1,4 @@
-project_path=/home/rakharrs/first-framework/first-framework
+project_path=/home/rakharrs/Workspace/java/first-framework
 framework_path=$project_path/framework
 webapp_path=$project_path/test-framework
 src=$framework_path/src
@@ -9,8 +9,8 @@ shopt -s globstar
 
 javac -parameters -d $build -cp $lib_path/* $src/**/*.java
 rm -R ./test-framework/WEB-INF/classes/*
-javac -parameters -d ./test-framework/WEB-INF/classes -cp ./test-framework/WEB-INF/lib/*.jar ./test-framework/java/**/*.java
 
-cd $framework_path/build
+cd $build
+jar -cf $webapp_path/WEB-INF/lib/framework.jar etu1999
 
-jar -cvf $webapp_path/WEB-INF/lib/framework.jar etu1999 
+javac -parameters -d $webapp_path/WEB-INF/classes -cp $webapp_path/WEB-INF/lib/*.jar $webapp_path/java/**/*.java

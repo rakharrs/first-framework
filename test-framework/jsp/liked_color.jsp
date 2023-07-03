@@ -12,6 +12,7 @@
     <title>Document</title>
 </head>
 <body>
+    T: <%= request.getAttribute("file_name") %>
     <div>Name : <%= request.getAttribute("name") %></div><br>
     <div>                  
         Liked colors : 
