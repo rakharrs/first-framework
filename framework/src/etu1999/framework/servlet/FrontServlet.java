@@ -4,15 +4,19 @@ import etu1999.framework.Mapping;
 import etu1999.framework.utils.ClassRetriever;
 import etu1999.framework.utils.mapping.Url;
 import etu1999.framework.utils.mapping.Arg;
+import etu1999.framework.utils.mapping.Scope;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
+import etu1999.framework.process.Fileupload;
 import etu1999.framework.process.Modelview;
 import java.lang.reflect.Parameter;
-
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -21,20 +25,29 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 import java.util.Vector;
 import java.lang.reflect.Array;
 
 import etu1999.framework.utils.*;
 
+@MultipartConfig
 public class FrontServlet extends HttpServlet {
     HashMap<String, Mapping> MappingUrls = new HashMap<>();
+    HashMap<String, Object> SingletonController = new HashMap<>();
+    protected Set<Class> classes;
 
     @Override 
     public void init() throws ServletException {
         String package_src = getInitParameter("package_src");
-        retrieveMappingUrls(Objects.requireNonNullElse(package_src,
-                "controller"));
+        try {
+            init_classes(Objects.requireNonNullElse(package_src,
+                            "controller"));
+            retrieveMappingUrls();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     protected void processRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -61,20 +74,18 @@ public class FrontServlet extends HttpServlet {
         MappingUrls = mappingUrls;
     }
 
-    protected void retrieveMappingUrls(String package_name){
-        try{
-            System.out.println(package_name);
-            Set<Class> classes = ClassRetriever.findAllClasses(package_name);
-            for (Class classe : classes){
-                Method[] methods = classe.getMethods();
-                for (Method method : methods)
-                    if(method.isAnnotationPresent(Url.class)) {
-                        Url url = method.getAnnotation(Url.class);
-                        this.MappingUrls.put(url.value(), new Mapping(classe.getName(), method.getName()));
-                    }
-            }
-        }catch (Exception e) {
-            e.printStackTrace();
+    protected void init_classes(String package_name) throws ClassNotFoundException, URISyntaxException{
+        this.classes = ClassRetriever.findAllClasses(package_name);
+    }
+
+    protected void retrieveMappingUrls(){
+        for (Class classe : classes){
+            Method[] methods = classe.getMethods();
+            for (Method method : methods)
+                if(method.isAnnotationPresent(Url.class)) {
+                    Url url = method.getAnnotation(Url.class);
+                    this.MappingUrls.put(url.value(), new Mapping(classe.getName(), method.getName()));
+                }
         }
     }
 
@@ -84,13 +95,24 @@ public class FrontServlet extends HttpServlet {
         Modelview modelview = null;
         try {
             Class<?> process_class = Class.forName(map.getClassName());
+            if(getSingletonController().get(map.getClassName()) == null){
+
+            }
             Object objet = process_class.newInstance();
 
         // Maka an'ilay parameter avy @ requete
             Map<String, String[]> requestParameter = req.getParameterMap();
 
+        // Maka ny parts anle servlet
+            Collection<Part> parts = null;
+            try {
+                parts = req.getParts();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         // m'initialize anle parameter
-            init_modelview_parameter(requestParameter, objet);
+            init_modelview_parameter(requestParameter, parts, objet);
 
             /* 
             Method method = objet.getClass().getDeclaredMethod(map.getMethod());
@@ -147,6 +169,7 @@ public class FrontServlet extends HttpServlet {
                     String[] param = parameters.get(params[i].getName());
                     args[i] = param;
                 }
+                
                 modelview = (Modelview) method.invoke(objet, dynamicCast(method_parameter_class, args));            // If there are parameters to the function
             }else modelview = (Modelview) method.invoke(objet);                                                     // if there are no parameter
         }
@@ -154,7 +177,7 @@ public class FrontServlet extends HttpServlet {
         return modelview;
     }
 
-            /**
+    /**
      * function who dynamically cast an Object with the matching classes
      * @param classes
      * @param args
@@ -182,18 +205,33 @@ public class FrontServlet extends HttpServlet {
    }
 
     /* Invoke setters */
-    public void init_modelview_parameter(Map<String, String[]> parameters, Object objet) throws Exception{
-        Method[] methods = objet.getClass().getDeclaredMethods();
-        for(Method method : methods){
+    public void init_modelview_parameter(Map<String, String[]> parameters, Collection<Part> parts, Object objet) throws Exception{
+        Method[] methods = objet.getClass().getDeclaredMethods();               // Maka ny methodn'ilay class
+        for(Method method : methods){                                           // Loop all of it's method to get the set and set the parameter
             String method_name = method.getName();
             System.out.println("method name : "+method_name);
-            if(!method_name.startsWith("set", 0))
+            if(!method_name.startsWith("set", 0))                               // if the method isn't a setter
                 continue;
-            String field_name = method_name.substring(3).toLowerCase();
-            String[] parameter = parameters.get(field_name);
-            if(parameter != null){
-                Class<?>[] method_parameter_class = arrayMethodParameter(method);
-                method.invoke(objet, dynamicCast(method_parameter_class, parameter));
+            String field_name = method_name.substring(3).toLowerCase();         // Getting the fieldname
+            String[] parameter = parameters.get(field_name);                    // Getting the parameter that matches with the field name
+            Class<?>[] method_parameter_class = arrayMethodParameter(method);
+            if(parameter != null && parameter.length > 0){                                                    
+                if(method_parameter_class[0] == Fileupload.class){
+                    if(parts != null){
+                        Part part = Misc.getPart(field_name, parts);
+                        Fileupload fileupload = Misc.makeFileUpload(part);
+                        method.invoke(objet, fileupload);
+                    }
+                }else method.invoke(objet, dynamicCast(method_parameter_class, parameter));
+            }else{
+                //Class<?>[] method_parameter_class = arrayMethodParameter(method);
+                if(method_parameter_class[0] == Fileupload.class){
+                    if(parts != null && parts.size() > 0){
+                        Part part = Misc.getPart(field_name, parts);
+                        Fileupload fileupload = Misc.makeFileUpload(part);
+                        method.invoke(objet, fileupload);
+                    }
+                }
             }
         }
     }
@@ -215,6 +253,11 @@ public class FrontServlet extends HttpServlet {
         return array;
     }
 
+    /**
+     * Return the class of the method's argument
+     * @param method
+     * @return
+     */
     private Class<?>[] arrayMethodParameter(Method method) {
         // Get the parameters of the method
         Parameter[] parameters = method.getParameters();
@@ -257,5 +300,12 @@ public class FrontServlet extends HttpServlet {
         }
         System.gc();
         out.println("</body></html>");
+    }
+
+    public HashMap<String, Object> getSingletonController() {
+        return SingletonController;
+    }
+    public void setSingletonController(HashMap<String, Object> singletonController) {
+        SingletonController = singletonController;
     }
 }
