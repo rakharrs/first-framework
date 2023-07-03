@@ -6,6 +6,7 @@ public class Modelview {
     
     protected String view;
     private HashMap<String, Object> data = new HashMap<>();
+    HashMap<String , Object> sessions = new HashMap<String, Object>();
 
     public String getView() {
         return view;
@@ -14,12 +15,24 @@ public class Modelview {
         this.getData().put(key, value);
     }
 
+    public void addSession(String key, Object value){
+        this.getSessions().put(key, value);
+    }
+
     public HashMap<String, Object> getData(){
         return this.data;
     }
 
+    public HashMap<String, Object> getSessions() {
+        return sessions;
+    }
+
     public void setData(HashMap<String, Object> new_attributes){
         this.data = new_attributes;
+    }
+
+    public void setSessions(HashMap<String, Object> sessions) {
+        this.sessions = sessions;
     }
 
     public void setView(String view) {
