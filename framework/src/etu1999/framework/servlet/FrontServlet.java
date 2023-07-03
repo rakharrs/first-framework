@@ -4,6 +4,7 @@ import etu1999.framework.Mapping;
 import etu1999.framework.utils.ClassRetriever;
 import etu1999.framework.utils.mapping.Url;
 import etu1999.framework.utils.mapping.Arg;
+import etu1999.framework.utils.mapping.Auth;
 import etu1999.framework.utils.mapping.Scope;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
@@ -12,6 +13,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import etu1999.framework.process.Fileupload;
 import etu1999.framework.process.Modelview;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.net.http.HttpRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +31,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.Vector;
+
+import javax.security.sasl.AuthenticationException;
+
 import java.lang.reflect.Array;
 
 import etu1999.framework.utils.*;
@@ -38,9 +44,18 @@ public class FrontServlet extends HttpServlet {
     HashMap<String, Object> SingletonController = new HashMap<>();
     protected Set<Class> classes;
 
+    String session_name;
+    String session_profile;
+
     @Override 
     public void init() throws ServletException {
         String package_src = getInitParameter("package_src");
+        String auth_name = String.valueOf( getInitParameter("session_name") );
+        String auth_profile = String.valueOf( getInitParameter("session_profile") );
+
+        setSession_name(auth_name);
+        setSession_profile(auth_profile);
+
         try {
             init_classes(Objects.requireNonNullElse(package_src,
                             "controller"));
@@ -108,7 +123,7 @@ public class FrontServlet extends HttpServlet {
         } return false;
     }
 
-    public Object instantiate_class(Mapping map) throws InstantiationException, IllegalAccessException, ClassNotFoundException{
+    public Object instantiate_class(HttpServletRequest req, Mapping map) throws InstantiationException, IllegalAccessException, ClassNotFoundException{
         Class<?> process_class = Class.forName(map.getClassName());
         Object objet = process_class.newInstance();
         if(is_singleton(process_class)){
@@ -118,12 +133,12 @@ public class FrontServlet extends HttpServlet {
         } return objet;
     }
 
-    public void dispatch_modelview(HttpServletRequest req, HttpServletResponse resp){
+    public void dispatch_modelview(HttpServletRequest req, HttpServletResponse resp) throws IOException{
         String key = Misc.getMappingValue(req);
         Mapping map = getMappingUrls().get(key);
         Modelview modelview = null;
         try {
-            Object objet = instantiate_class(map);
+            Object objet = instantiate_class(req, map);
 
         // Maka an'ilay parameter avy @ requete
             Map<String, String[]> requestParameter = req.getParameterMap();
@@ -140,18 +155,22 @@ public class FrontServlet extends HttpServlet {
             init_modelview_parameter(requestParameter, parts, objet);
 
 
-        // M'invoke an'ilay conntroller
-        try {
-            modelview = invoke_requested_method(requestParameter, objet, map.getMethod());
-            for (String k: modelview.getData().keySet())
-                req.setAttribute(k, modelview.getData().get(k));
-            req.getRequestDispatcher(modelview.getView()).forward(req, resp);
-        } catch (Exception e) {
-            PrintWriter out = resp.getWriter();
-            out.println("- MODELVIEW NULL -");
-            e.printStackTrace(out);
-            out.close();
-        }
+            // M'invoke an'ilay conntroller
+            try {
+                modelview = invoke_requested_method(req, requestParameter, objet, map.getMethod());
+                for (String k: modelview.getData().keySet())
+                    req.setAttribute(k, modelview.getData().get(k));
+                    
+                HashMap<String, Object> sessions = modelview.getSessions();
+                this.setSessions(req, sessions);
+
+                req.getRequestDispatcher(modelview.getView()).forward(req, resp);
+            } catch (Exception e) {
+                PrintWriter out = resp.getWriter();
+                out.println("- MODELVIEW NULL -");
+                e.printStackTrace(out);
+                out.close();
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -165,11 +184,21 @@ public class FrontServlet extends HttpServlet {
         throw new NoSuchMethodException("No method as : "+method_name);
     }
 
-    public Modelview invoke_requested_method(Map<String, String[]> parameters, Object objet, String method_name) throws Exception{
+    public Modelview invoke_requested_method(HttpServletRequest req, Map<String, String[]> parameters, Object objet, String method_name) throws Exception{
         Modelview modelview = null;
         System.out.println("invokde meth " + method_name);
         // Method method = objet.getClass().getDeclaredMethod(method_name);
-        Method method = getMathingMethod(objet.getClass().getDeclaredMethods(), method_name);                      // getting the method matching with the url
+        Method method = getMathingMethod(objet.getClass().getDeclaredMethods(), method_name);
+        if(method.isAnnotationPresent(Auth.class)){
+            Auth auth = method.getAnnotation(Auth.class);
+            Object sessionName = req.getSession().getAttribute(this.getSession_name());
+            Object sessionProfile = req.getSession().getAttribute(this.getSession_profile());
+
+            if( sessionName == null || (sessionName != null  && !((String) sessionProfile).equalsIgnoreCase(auth.user()) ) )
+                throw new AuthenticationException("Sorry You can't access that url with your privileges : " + sessionProfile);
+        }                      
+        
+        // getting the method matching with the url
         if(method.getReturnType()==Modelview.class){
             Parameter[] params = method.getParameters();                                                            // parameters of the method
             if(params.length > 0){
@@ -323,5 +352,29 @@ public class FrontServlet extends HttpServlet {
     }
     public void setSingletonController(HashMap<String, Object> singletonController) {
         SingletonController = singletonController;
+    }
+
+    public String getSession_name() {
+        return session_name;
+    }
+
+    public String getSession_profile() {
+        return session_profile;
+    }
+
+    public void setSession_name(String session_name) {
+        this.session_name = session_name;
+    }
+
+    public void setSession_profile(String session_profile) {
+        this.session_profile = session_profile;
+    }
+
+    private void setSessions(HttpServletRequest request, HashMap<String, Object> sessions) throws Exception {
+        HttpSession session = request.getSession();
+        for (Map.Entry<String, Object> sets : sessions.entrySet()) {
+            session.setAttribute(sets.getKey(), sets.getValue());
+        }
+        // request.setAttribute(  );
     }
 }

@@ -20,6 +20,14 @@
             <param-name>package_src</param-name>
             <param-value>controller</param-value>
         </init-param>
+        <init-param>
+            <param-name>session_name</param-name>
+            <param-value>isConnected</param-value>
+        </init-param>
+        <init-param>
+            <param-name>session_profile</param-name>
+            <param-value>profil</param-value>
+        </init-param>
     </servlet>
     <servlet-mapping>
         <servlet-name>frontservlet</servlet-name>
