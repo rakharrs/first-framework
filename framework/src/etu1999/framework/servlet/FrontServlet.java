@@ -45,6 +45,7 @@ public class FrontServlet extends HttpServlet {
             init_classes(Objects.requireNonNullElse(package_src,
                             "controller"));
             retrieveMappingUrls();
+            retrieveSingleton();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -89,16 +90,40 @@ public class FrontServlet extends HttpServlet {
         }
     }
 
+    protected void retrieveSingleton(){
+        for(Class classe : classes){
+            if(is_singleton(classe)){
+                getSingletonController().put(classe.getName(), null);
+            }
+            System.out.println("classe : "+classe.getName());
+            System.out.println(is_singleton(classe));
+        }
+    }
+
+    public boolean is_singleton(Class<?> classe){
+        if(classe.isAnnotationPresent(Scope.class)){
+            Scope scope = classe.getAnnotation(Scope.class);
+            if(scope.value().toLowerCase().equals("singleton"))
+                return true;
+        } return false;
+    }
+
+    public Object instantiate_class(Mapping map) throws InstantiationException, IllegalAccessException, ClassNotFoundException{
+        Class<?> process_class = Class.forName(map.getClassName());
+        Object objet = process_class.newInstance();
+        if(is_singleton(process_class)){
+            if(getSingletonController().get(map.getClassName()) != null)
+                objet = getSingletonController().get(map.getClassName());
+            else getSingletonController().put(map.getClassName(), objet);
+        } return objet;
+    }
+
     public void dispatch_modelview(HttpServletRequest req, HttpServletResponse resp){
         String key = Misc.getMappingValue(req);
         Mapping map = getMappingUrls().get(key);
         Modelview modelview = null;
         try {
-            Class<?> process_class = Class.forName(map.getClassName());
-            if(getSingletonController().get(map.getClassName()) == null){
-
-            }
-            Object objet = process_class.newInstance();
+            Object objet = instantiate_class(map);
 
         // Maka an'ilay parameter avy @ requete
             Map<String, String[]> requestParameter = req.getParameterMap();
@@ -114,11 +139,6 @@ public class FrontServlet extends HttpServlet {
         // m'initialize anle parameter
             init_modelview_parameter(requestParameter, parts, objet);
 
-            /* 
-            Method method = objet.getClass().getDeclaredMethod(map.getMethod());
-            if(method.getReturnType()==Modelview.class)
-                modelview = (Modelview) method.invoke(objet); 
-            */
 
         // M'invoke an'ilay conntroller
         try {
@@ -133,15 +153,6 @@ public class FrontServlet extends HttpServlet {
             out.close();
         }
 
-            /*if(modelview != null){
-                for (String k: modelview.getData().keySet())
-                    req.setAttribute(k, modelview.getData().get(k));
-                req.getRequestDispatcher(modelview.getView()).forward(req, resp);
-            }else{
-                PrintWriter out = resp.getWriter();
-                out.println("-MODELVIEW NULL-");
-                out.close();
-            }*/
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -296,6 +307,11 @@ public class FrontServlet extends HttpServlet {
         out.println("<p>"+Misc.getMappingValue(req)+"</p>");
         for (String k: getMappingUrls().keySet()) {
             out.print("key : " + k);
+            out.println(" value : " + getMappingUrls().get(k).getClassName());
+        }
+
+        for(String k : getSingletonController().keySet()){
+            out.print("singleton key : " + k);
             out.println(" value : " + getMappingUrls().get(k).getClassName());
         }
         System.gc();
