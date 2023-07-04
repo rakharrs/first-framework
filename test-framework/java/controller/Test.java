@@ -20,7 +20,7 @@ public class Test {
         }
         modelview.addItem("test2", "ok");
         modelview.setView("ox.jsp");
-
+        modelview.setJson(true);
         System.out.println("oko");
         
         return modelview;

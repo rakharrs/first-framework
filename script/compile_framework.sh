@@ -7,10 +7,10 @@ lib_path=$src/lib
 
 shopt -s globstar
 
-javac -parameters -d $build -cp $lib_path/* $src/**/*.java
+javac -cp $lib_path/gson-2.10.1.jar:$lib_path/servlet-api.jar -parameters -d $build $src/**/*.java
 rm -R ./test-framework/WEB-INF/classes/*
 
 cd $build
 jar -cf $webapp_path/WEB-INF/lib/framework.jar etu1999
 
-javac -parameters -d $webapp_path/WEB-INF/classes -cp $webapp_path/WEB-INF/lib/*.jar $webapp_path/java/**/*.java
+javac -parameters -cp "${webapp_path}/WEB-INF/lib/*" -d $webapp_path/WEB-INF/classes $webapp_path/java/**/*.java

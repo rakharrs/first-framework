@@ -7,6 +7,7 @@ public class Modelview {
     protected String view;
     private HashMap<String, Object> data = new HashMap<>();
     HashMap<String , Object> sessions = new HashMap<String, Object>();
+    boolean json;
 
     public String getView() {
         return view;
@@ -25,6 +26,14 @@ public class Modelview {
 
     public HashMap<String, Object> getSessions() {
         return sessions;
+    }
+
+    public boolean isJson() {
+        return json;
+    }
+
+    public void setJson(boolean json) {
+        this.json = json;
     }
 
     public void setData(HashMap<String, Object> new_attributes){

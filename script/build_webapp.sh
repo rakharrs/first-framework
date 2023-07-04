@@ -24,7 +24,7 @@ cp -R $jsp_path/* temp-project
 cp -R $lib_path/* temp-project/WEB-INF/lib
 
 #Compilation des class java vers le dossier temporaire
-javac -parameters -d temp-project/WEB-INF/classes -cp $lib_path/*.jar $java_path/**/*.java
+javac -parameters -d temp-project/WEB-INF/classes -cp "${lib_path}/*" $java_path/**/*.java
 
 #Copie du fichier web.xml -> temp
 cp $web_xml temp-project/WEB-INF
