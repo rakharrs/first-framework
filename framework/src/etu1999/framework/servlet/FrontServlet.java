@@ -56,7 +56,7 @@ public class FrontServlet extends HttpServlet {
     public void init() throws ServletException {
         String package_src = getInitParameter("package_src");
         String auth_name = String.valueOf( getInitParameter("session_name") );
-        String auth_profile = String.valueOf( getInitParameter("session_profile") );
+        String auth_profile = String.valueOf( getInitParameter("session_profile") ); //
 
         setSession_name(auth_name);
         setSession_profile(auth_profile);
