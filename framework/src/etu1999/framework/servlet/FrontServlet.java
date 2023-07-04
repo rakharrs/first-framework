@@ -37,6 +37,8 @@ import java.util.Vector;
 
 import javax.security.sasl.AuthenticationException;
 
+import com.google.gson.Gson;
+
 import java.lang.reflect.Array;
 
 import etu1999.framework.utils.*;
@@ -71,8 +73,8 @@ public class FrontServlet extends HttpServlet {
 
     protected void processRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HttpServletMapping mapping = req.getHttpServletMapping();
-        dispatch_modelview(req, resp);
-        print_test(req, resp);
+        if(!dispatch_modelview(req, resp))
+            print_test(req, resp);
     }
 
     @Override
@@ -136,7 +138,7 @@ public class FrontServlet extends HttpServlet {
         } return objet;
     }
 
-    public void dispatch_modelview(HttpServletRequest req, HttpServletResponse resp) throws IOException{
+    public boolean dispatch_modelview(HttpServletRequest req, HttpServletResponse resp) throws IOException{
         String key = Misc.getMappingValue(req);
         Mapping map = getMappingUrls().get(key);
         Modelview modelview = null;
@@ -161,13 +163,19 @@ public class FrontServlet extends HttpServlet {
             // M'invoke an'ilay conntroller
             try {
                 modelview = invoke_requested_method(req, requestParameter, objet, map.getMethod());
-                for (String k: modelview.getData().keySet())
-                    req.setAttribute(k, modelview.getData().get(k));
-                    
-                HashMap<String, Object> sessions = modelview.getSessions();
-                this.setSessions(req, sessions);
-
-                req.getRequestDispatcher(modelview.getView()).forward(req, resp);
+                if(modelview.isJson()){
+                    resp.setContentType("application/json");
+                    Gson gson = new Gson();
+                    PrintWriter out = resp.getWriter();
+                    out.println( gson.toJson(modelview.getData()));
+                }else{
+                    for (String k: modelview.getData().keySet())
+                        req.setAttribute(k, modelview.getData().get(k));
+                    HashMap<String, Object> sessions = modelview.getSessions();
+                    this.setSessions(req, sessions);
+                    req.getRequestDispatcher(modelview.getView()).forward(req, resp);
+                }
+                return true;
             } catch (Exception e) {
                 PrintWriter out = resp.getWriter();
                 out.println("- MODELVIEW NULL -");
@@ -178,6 +186,7 @@ public class FrontServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     public Method getMathingMethod(Method[] methods, String method_name) throws NoSuchMethodException{
@@ -218,13 +227,11 @@ public class FrontServlet extends HttpServlet {
             Parameter[] params = method.getParameters();                                                            // parameters of the method
             if(params.length > 0){
                 Class<?>[] method_parameter_class = arrayMethodParameter(method);                                   // method of the parameter
-                //Object[] args = new Object[params.length];
                 String[][] args = new String[params.length][];
                 for(int i = 0; i < params.length; i++){
                     String[] param = parameters.get(params[i].getName());
                     args[i] = param;
                 }
-                
                 modelview = (Modelview) method.invoke(objet, dynamicCast(method_parameter_class, args));            // If there are parameters to the function
             }else modelview = (Modelview) method.invoke(objet);                                                     // if there are no parameter
         }

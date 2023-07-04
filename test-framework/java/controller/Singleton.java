@@ -18,7 +18,6 @@ public class Singleton {
         modelview.addItem("value", this.value);
         modelview.setView("singleton.jsp");
 
-
         return modelview;
     }
 
