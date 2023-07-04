@@ -6,6 +6,7 @@ import etu1999.framework.utils.mapping.Url;
 import etu1999.framework.utils.mapping.Arg;
 import etu1999.framework.utils.mapping.Auth;
 import etu1999.framework.utils.mapping.Scope;
+import etu1999.framework.utils.mapping.Session;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -27,8 +28,10 @@ import java.net.http.HttpRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.Vector;
 
@@ -189,6 +192,8 @@ public class FrontServlet extends HttpServlet {
         System.out.println("invokde meth " + method_name);
         // Method method = objet.getClass().getDeclaredMethod(method_name);
         Method method = getMathingMethod(objet.getClass().getDeclaredMethods(), method_name);
+
+        // Checking authentification
         if(method.isAnnotationPresent(Auth.class)){
             Auth auth = method.getAnnotation(Auth.class);
             Object sessionName = req.getSession().getAttribute(this.getSession_name());
@@ -196,7 +201,17 @@ public class FrontServlet extends HttpServlet {
 
             if( sessionName == null || (sessionName != null  && !((String) sessionProfile).equalsIgnoreCase(auth.user()) ) )
                 throw new AuthenticationException("Sorry You can't access that url with your privileges : " + sessionProfile);
-        }                      
+        }                   
+        
+        // Checking if it got session and setting it
+        if(method.isAnnotationPresent(Session.class)){
+            ArrayList<String> sessions = Collections.list(req.getSession().getAttributeNames());
+            HashMap<String, Object> session_copy = new HashMap<>();
+            for(String attribute : sessions)
+                session_copy.put(attribute, req.getSession().getAttribute(attribute));
+            Method set_session = objet.getClass().getDeclaredMethod("setSession", HashMap.class);
+            set_session.invoke(objet, session_copy);
+        }
         
         // getting the method matching with the url
         if(method.getReturnType()==Modelview.class){
