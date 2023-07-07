@@ -29,6 +29,13 @@ public class Form {
         return modelview;
     }
 
+    @Url("/Test-json")
+    public Test json(){
+        Test test = new Test();
+        test.setName("name");
+        return test;
+    }
+
     public String getName(){
         return this.name;
     }

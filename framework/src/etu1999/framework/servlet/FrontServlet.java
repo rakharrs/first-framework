@@ -184,6 +184,7 @@ public class FrontServlet extends HttpServlet {
                 }else{
                     resp.setContentType("application/json");
                     out.println( gson.toJson(res) );
+                    return true;
                 }
             } catch (Exception e) {
                 out.println("- MODELVIEW NULL -");
@@ -241,18 +242,17 @@ public class FrontServlet extends HttpServlet {
         }
         
         // getting the method matching with the url
-        if(method.getReturnType()==Modelview.class){
-            Parameter[] params = method.getParameters();                                                            // parameters of the method
-            if(params.length > 0){
-                Class<?>[] method_parameter_class = arrayMethodParameter(method);                                   // method of the parameter
-                String[][] args = new String[params.length][];
-                for(int i = 0; i < params.length; i++){
-                    String[] param = parameters.get(params[i].getName());
-                    args[i] = param;
-                }
-                modelview = method.invoke(objet, dynamicCast(method_parameter_class, args));            // If there are parameters to the function
-            }else modelview = method.invoke(objet);                                                     // if there are no parameter
-        }
+        Parameter[] params = method.getParameters();                                                            // parameters of the method
+        if(params.length > 0){
+            Class<?>[] method_parameter_class = arrayMethodParameter(method);                                   // method of the parameter
+            String[][] args = new String[params.length][];
+            for(int i = 0; i < params.length; i++){
+                String[] param = parameters.get(params[i].getName());
+                args[i] = param;
+            }
+            modelview = method.invoke(objet, dynamicCast(method_parameter_class, args));            // If there are parameters to the function
+        }else modelview = method.invoke(objet); 
+                                                            // if there are no parameter
         if(modelview == null) throw new Exception("The given Modelview is just null");
         return modelview;
     }
