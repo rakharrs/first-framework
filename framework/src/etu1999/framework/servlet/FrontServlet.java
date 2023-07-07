@@ -167,7 +167,7 @@ public class FrontServlet extends HttpServlet {
                 res = invoke_requested_method(req, requestParameter, objet, map.getMethod());
                 Gson gson = new Gson();
                 if(res instanceof Modelview){
-                    Modelview modelview = (Modelview) modelview;
+                    Modelview modelview = (Modelview) res;
                     if(modelview.isJson()){
                         resp.setContentType("application/json");
                         out.println( gson.toJson(modelview.getData()));
