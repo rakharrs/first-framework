@@ -56,7 +56,7 @@ public class FrontServlet extends HttpServlet {
     public void init() throws ServletException {
         String package_src = getInitParameter("package_src");
         String auth_name = String.valueOf( getInitParameter("session_name") );
-        String auth_profile = String.valueOf( getInitParameter("session_profile") );
+        String auth_profile = String.valueOf( getInitParameter("session_profile") ); //
 
         setSession_name(auth_name);
         setSession_profile(auth_profile);
@@ -141,8 +141,9 @@ public class FrontServlet extends HttpServlet {
     public boolean dispatch_modelview(HttpServletRequest req, HttpServletResponse resp) throws IOException{
         String key = Misc.getMappingValue(req);
         Mapping map = getMappingUrls().get(key);
-        Modelview modelview = null;
+        Object res = null;
         try {
+            PrintWriter out = resp.getWriter();
             Object objet = instantiate_class(req, map);
 
         // Maka an'ilay parameter avy @ requete
@@ -162,22 +163,27 @@ public class FrontServlet extends HttpServlet {
 
             // M'invoke an'ilay conntroller
             try {
-                modelview = invoke_requested_method(req, requestParameter, objet, map.getMethod());
-                if(modelview.isJson()){
-                    resp.setContentType("application/json");
-                    Gson gson = new Gson();
-                    PrintWriter out = resp.getWriter();
-                    out.println( gson.toJson(modelview.getData()));
+                
+                res = invoke_requested_method(req, requestParameter, objet, map.getMethod());
+                Gson gson = new Gson();
+                if(res instanceof Modelview){
+                    Modelview modelview = (Modelview) res;
+                    if(modelview.isJson()){
+                        resp.setContentType("application/json");
+                        out.println( gson.toJson(modelview.getData()));
+                    }else{
+                        for (String k: modelview.getData().keySet())
+                            req.setAttribute(k, modelview.getData().get(k));
+                        HashMap<String, Object> sessions = modelview.getSessions();
+                        this.setSessions(req, sessions);
+                        req.getRequestDispatcher(modelview.getView()).forward(req, resp);
+                    }
+                    return true;
                 }else{
-                    for (String k: modelview.getData().keySet())
-                        req.setAttribute(k, modelview.getData().get(k));
-                    HashMap<String, Object> sessions = modelview.getSessions();
-                    this.setSessions(req, sessions);
-                    req.getRequestDispatcher(modelview.getView()).forward(req, resp);
+                    resp.setContentType("application/json");
+                    out.println( gson.toJson(res) );
                 }
-                return true;
             } catch (Exception e) {
-                PrintWriter out = resp.getWriter();
                 out.println("- MODELVIEW NULL -");
                 e.printStackTrace(out);
                 out.close();
@@ -196,8 +202,8 @@ public class FrontServlet extends HttpServlet {
         throw new NoSuchMethodException("No method as : "+method_name);
     }
 
-    public Modelview invoke_requested_method(HttpServletRequest req, Map<String, String[]> parameters, Object objet, String method_name) throws Exception{
-        Modelview modelview = null;
+    public Object invoke_requested_method(HttpServletRequest req, Map<String, String[]> parameters, Object objet, String method_name) throws Exception{
+        Object modelview = null;
         System.out.println("invokde meth " + method_name);
         // Method method = objet.getClass().getDeclaredMethod(method_name);
         Method method = getMathingMethod(objet.getClass().getDeclaredMethods(), method_name);
@@ -232,8 +238,8 @@ public class FrontServlet extends HttpServlet {
                     String[] param = parameters.get(params[i].getName());
                     args[i] = param;
                 }
-                modelview = (Modelview) method.invoke(objet, dynamicCast(method_parameter_class, args));            // If there are parameters to the function
-            }else modelview = (Modelview) method.invoke(objet);                                                     // if there are no parameter
+                modelview = method.invoke(objet, dynamicCast(method_parameter_class, args));            // If there are parameters to the function
+            }else modelview = method.invoke(objet);                                                     // if there are no parameter
         }
         if(modelview == null) throw new Exception("The given Modelview is just null");
         return modelview;
