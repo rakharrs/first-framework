@@ -1,11 +1,15 @@
 package etu1999.framework.process;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class Modelview {
     
     protected String view;
     private HashMap<String, Object> data = new HashMap<>();
+    private boolean invalidate; // For session
+    private List<String> removeSession = new ArrayList<>();
     HashMap<String , Object> sessions = new HashMap<String, Object>();
     boolean json;
 
@@ -46,5 +50,24 @@ public class Modelview {
 
     public void setView(String view) {
         this.view = view;
+    }
+
+    public boolean isInvalidate() {
+        return invalidate;
+    }
+
+    /**
+     * For checking if the session is invalid
+     * @param invalidate
+     */
+    public void setInvalidate(boolean invalidate) {
+        this.invalidate = invalidate;
+    }
+
+    public List<String> getRemoveSession() {
+        return removeSession;
+    }
+    public void setRemoveSession(List<String> removeSession) {
+        this.removeSession = removeSession;
     }
 }

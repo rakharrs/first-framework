@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ArrayList;
@@ -176,6 +177,7 @@ public class FrontServlet extends HttpServlet {
                             req.setAttribute(k, modelview.getData().get(k));
                         HashMap<String, Object> sessions = modelview.getSessions();
                         this.setSessions(req, sessions);
+                        this.handleSession(modelview, req);
                         req.getRequestDispatcher(modelview.getView()).forward(req, resp);
                     }
                     return true;
@@ -200,6 +202,16 @@ public class FrontServlet extends HttpServlet {
             if (method.getName().equals(method_name))
                 return method;
         throw new NoSuchMethodException("No method as : "+method_name);
+    }
+
+    public void handleSession(Modelview modelview, HttpServletRequest request){
+        if(modelview.isInvalidate()){
+            request.getSession().invalidate();
+            return;
+        }
+        List<String> sessions = modelview.getRemoveSession();
+        for(String session : sessions)
+            request.getSession().removeAttribute(session);
     }
 
     public Object invoke_requested_method(HttpServletRequest req, Map<String, String[]> parameters, Object objet, String method_name) throws Exception{
